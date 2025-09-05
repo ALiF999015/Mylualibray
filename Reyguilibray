@@ -1,8 +1,7 @@
--- ReySimpleGUI v2 (Tab Switching Support)
+-- ReySimpleGUI Library v2 (perbaikan tab)
 local Library = {}
 Library.__index = Library
 
--- Buat window utama
 function Library.CreateWindow(options)
     local ScreenGui = Instance.new("ScreenGui")
     ScreenGui.Name = "ReySimpleGUI"
@@ -21,7 +20,7 @@ function Library.CreateWindow(options)
     Title.Size = UDim2.new(1, 0, 0, 30)
     Title.BackgroundColor3 = Color3.fromRGB(20, 40, 100)
     Title.Text = options.Title or "Rey_Script Hub"
-    Title.TextColor3 = Color3.new(1, 1, 1)
+    Title.TextColor3 = Color3.new(1,1,1)
     Title.Font = Enum.Font.GothamBold
     Title.TextSize = 16
     Title.Parent = Frame
@@ -29,66 +28,61 @@ function Library.CreateWindow(options)
     local self = setmetatable({}, Library)
     self.Frame = Frame
     self.Tabs = {}
-    self.TabButtons = {}
-    self.ActiveTab = nil
     return self
 end
 
--- Tambah tab
 function Library:AddTab(name)
-    -- frame untuk tab
-    local TabFrame = Instance.new("Frame")
+    -- Frame tab
+    local TabFrame = Instance.new("ScrollingFrame")
     TabFrame.Size = UDim2.new(1, -10, 1, -40)
     TabFrame.Position = UDim2.new(0, 5, 0, 35)
     TabFrame.BackgroundTransparency = 0.2
     TabFrame.BackgroundColor3 = Color3.fromRGB(30, 60, 120)
-    TabFrame.Visible = false
+    TabFrame.ScrollBarThickness = 6
+    TabFrame.Visible = false -- sembunyikan default
     TabFrame.Parent = self.Frame
 
-    -- tombol tab
+    -- Tombol tab
     local TabButton = Instance.new("TextButton")
-    TabButton.Size = UDim2.new(0, 100, 0, 25)
-    TabButton.Position = UDim2.new(0, 5 + (#self.TabButtons * 105), 0, 5)
+    TabButton.Size = UDim2.new(0, 100, 0, 30)
+    TabButton.Position = UDim2.new(0, (#self.Tabs * 105) + 5, 0, 0)
     TabButton.Text = name
-    TabButton.BackgroundColor3 = Color3.fromRGB(70, 130, 180)
-    TabButton.TextColor3 = Color3.new(1, 1, 1)
+    TabButton.BackgroundColor3 = Color3.fromRGB(50,50,180)
+    TabButton.TextColor3 = Color3.new(1,1,1)
     TabButton.Font = Enum.Font.GothamBold
-    TabButton.TextSize = 14
+    TabButton.TextSize = 16
     TabButton.Parent = self.Frame
 
     TabButton.MouseButton1Click:Connect(function()
-        for _, t in ipairs(self.Tabs) do
+        for _, t in pairs(self.Tabs) do
             t.Frame.Visible = false
         end
         TabFrame.Visible = true
-        self.ActiveTab = TabFrame
     end)
 
-    local Layout = Instance.new("UIListLayout", TabFrame)
-    Layout.Padding = UDim.new(0, 5)
-    Layout.SortOrder = Enum.SortOrder.LayoutOrder
+    -- Default tab pertama muncul
+    if #self.Tabs == 0 then TabFrame.Visible = true end
 
     local Section = {}
+    Section.Frame = TabFrame
 
-    -- Section
     function Section:AddSection(title)
         local Label = Instance.new("TextLabel")
         Label.Size = UDim2.new(1, -10, 0, 20)
-        Label.Text = "— " .. title .. " —"
+        Label.Text = "— "..title.." —"
         Label.BackgroundTransparency = 1
-        Label.TextColor3 = Color3.new(1, 1, 1)
+        Label.TextColor3 = Color3.new(1,1,1)
         Label.Font = Enum.Font.GothamBold
         Label.TextSize = 14
         Label.Parent = TabFrame
     end
 
-    -- Toggle
     function Section:AddToggle(title, default, callback)
         local Button = Instance.new("TextButton")
-        Button.Size = UDim2.new(0, 200, 0, 25)
-        Button.BackgroundColor3 = Color3.fromRGB(70, 130, 255)
-        Button.Text = (default and "[✔] " or "[ ] ") .. title
-        Button.TextColor3 = Color3.new(1, 1, 1)
+        Button.Size = UDim2.new(0,200,0,25)
+        Button.BackgroundColor3 = Color3.fromRGB(70,130,255)
+        Button.Text = (default and "[✔] " or "[ ] ")..title
+        Button.TextColor3 = Color3.new(1,1,1)
         Button.Font = Enum.Font.GothamBold
         Button.TextSize = 14
         Button.Parent = TabFrame
@@ -96,18 +90,17 @@ function Library:AddTab(name)
         local state = default or false
         Button.MouseButton1Click:Connect(function()
             state = not state
-            Button.Text = (state and "[✔] " or "[ ] ") .. title
-            if callback then pcall(callback, state) end
+            Button.Text = (state and "[✔] " or "[ ] ")..title
+            if callback then pcall(callback,state) end
         end)
     end
 
-    -- Button
     function Section:AddButton(title, callback)
         local Btn = Instance.new("TextButton")
-        Btn.Size = UDim2.new(0, 200, 0, 25)
-        Btn.BackgroundColor3 = Color3.fromRGB(100, 160, 255)
+        Btn.Size = UDim2.new(0,200,0,25)
+        Btn.BackgroundColor3 = Color3.fromRGB(100,160,255)
         Btn.Text = title
-        Btn.TextColor3 = Color3.new(1, 1, 1)
+        Btn.TextColor3 = Color3.new(1,1,1)
         Btn.Font = Enum.Font.GothamBold
         Btn.TextSize = 14
         Btn.Parent = TabFrame
@@ -117,31 +110,30 @@ function Library:AddTab(name)
         end)
     end
 
-    -- Slider
-    function Section:AddSlider(title, min, max, default, callback)
-        local FrameS = Instance.new("Frame")
-        FrameS.Size = UDim2.new(0, 200, 0, 40)
-        FrameS.BackgroundColor3 = Color3.fromRGB(50, 100, 200)
-        FrameS.Parent = TabFrame
+    function Section:AddSlider(title,min,max,default,callback)
+        local F = Instance.new("Frame")
+        F.Size = UDim2.new(0,200,0,40)
+        F.BackgroundColor3 = Color3.fromRGB(50,100,200)
+        F.Parent = TabFrame
 
         local Label = Instance.new("TextLabel")
-        Label.Size = UDim2.new(1, 0, 0, 15)
-        Label.Text = title .. ": " .. tostring(default)
-        Label.TextColor3 = Color3.new(1, 1, 1)
+        Label.Size = UDim2.new(1,0,0,15)
+        Label.Text = title..": "..tostring(default)
+        Label.TextColor3 = Color3.new(1,1,1)
         Label.Font = Enum.Font.GothamBold
         Label.TextSize = 14
         Label.BackgroundTransparency = 1
-        Label.Parent = FrameS
+        Label.Parent = F
 
         local Slider = Instance.new("TextButton")
-        Slider.Size = UDim2.new(1, 0, 0, 20)
-        Slider.Position = UDim2.new(0, 0, 0, 20)
-        Slider.BackgroundColor3 = Color3.fromRGB(80, 140, 255)
+        Slider.Size = UDim2.new(1,0,0,20)
+        Slider.Position = UDim2.new(0,0,0,20)
+        Slider.BackgroundColor3 = Color3.fromRGB(80,140,255)
         Slider.Text = "Drag here"
-        Slider.TextColor3 = Color3.new(1, 1, 1)
+        Slider.TextColor3 = Color3.new(1,1,1)
         Slider.Font = Enum.Font.Gotham
         Slider.TextSize = 12
-        Slider.Parent = FrameS
+        Slider.Parent = F
 
         local value = default or min
         local UIS = game:GetService("UserInputService")
@@ -149,56 +141,44 @@ function Library:AddTab(name)
         Slider.MouseButton1Down:Connect(function()
             local conn
             conn = UIS.InputChanged:Connect(function(input)
-                if input.UserInputType == Enum.UserInputType.MouseMovement then
-                    local percent = math.clamp((input.Position.X - Slider.AbsolutePosition.X) / Slider.AbsoluteSize.X, 0, 1)
-                    value = math.floor(min + (max - min) * percent)
-                    Label.Text = title .. ": " .. tostring(value)
-                    if callback then pcall(callback, value) end
+                if input.UserInputType==Enum.UserInputType.MouseMovement then
+                    local percent = math.clamp((input.Position.X - Slider.AbsolutePosition.X)/Slider.AbsoluteSize.X,0,1)
+                    value = math.floor(min+(max-min)*percent)
+                    Label.Text = title..": "..tostring(value)
+                    if callback then pcall(callback,value) end
                 end
             end)
             UIS.InputEnded:Connect(function(input)
-                if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                if input.UserInputType==Enum.UserInputType.MouseButton1 then
                     if conn then conn:Disconnect() end
                 end
             end)
         end)
     end
 
-    -- Keybind
-    function Section:AddKeybind(title, default, callback)
+    function Section:AddKeybind(title,default,callback)
         local Btn = Instance.new("TextButton")
-        Btn.Size = UDim2.new(0, 200, 0, 25)
-        Btn.BackgroundColor3 = Color3.fromRGB(90, 150, 255)
-        Btn.Text = title .. " [" .. default.Name .. "]"
-        Btn.TextColor3 = Color3.new(1, 1, 1)
+        Btn.Size = UDim2.new(0,200,0,25)
+        Btn.BackgroundColor3 = Color3.fromRGB(90,150,255)
+        Btn.Text = title.." ["..default.Name.."]"
+        Btn.TextColor3 = Color3.new(1,1,1)
         Btn.Font = Enum.Font.GothamBold
         Btn.TextSize = 14
         Btn.Parent = TabFrame
 
         local key = default or Enum.KeyCode.F
         local UIS = game:GetService("UserInputService")
-
-        UIS.InputBegan:Connect(function(input, gameProcessed)
-            if not gameProcessed and input.KeyCode == key then
+        UIS.InputBegan:Connect(function(input,processed)
+            if not processed and input.KeyCode==key then
                 if callback then pcall(callback) end
             end
         end)
     end
 
-    -- simpan tab
-    table.insert(self.Tabs, {Frame = TabFrame, Name = name})
-    table.insert(self.TabButtons, TabButton)
-
-    -- aktifkan tab pertama otomatis
-    if #self.Tabs == 1 then
-        TabFrame.Visible = true
-        self.ActiveTab = TabFrame
-    end
-
+    table.insert(self.Tabs, Section)
     return Section
 end
 
--- Close GUI
 function Library:Close()
     self.Frame.Parent:Destroy()
 end
