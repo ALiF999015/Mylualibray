@@ -1,8 +1,8 @@
--- ReySimpleGUI Library
+-- ReySimpleGUI v2 (Tab Switching Support)
 local Library = {}
 Library.__index = Library
 
--- buat window utama
+-- Buat window utama
 function Library.CreateWindow(options)
     local ScreenGui = Instance.new("ScreenGui")
     ScreenGui.Name = "ReySimpleGUI"
@@ -28,24 +28,49 @@ function Library.CreateWindow(options)
 
     local self = setmetatable({}, Library)
     self.Frame = Frame
+    self.Tabs = {}
+    self.TabButtons = {}
+    self.ActiveTab = nil
     return self
 end
 
--- tambah tab
+-- Tambah tab
 function Library:AddTab(name)
-    local TabFrame = Instance.new("ScrollingFrame")
+    -- frame untuk tab
+    local TabFrame = Instance.new("Frame")
     TabFrame.Size = UDim2.new(1, -10, 1, -40)
     TabFrame.Position = UDim2.new(0, 5, 0, 35)
     TabFrame.BackgroundTransparency = 0.2
     TabFrame.BackgroundColor3 = Color3.fromRGB(30, 60, 120)
-    TabFrame.ScrollBarThickness = 6
+    TabFrame.Visible = false
     TabFrame.Parent = self.Frame
+
+    -- tombol tab
+    local TabButton = Instance.new("TextButton")
+    TabButton.Size = UDim2.new(0, 100, 0, 25)
+    TabButton.Position = UDim2.new(0, 5 + (#self.TabButtons * 105), 0, 5)
+    TabButton.Text = name
+    TabButton.BackgroundColor3 = Color3.fromRGB(70, 130, 180)
+    TabButton.TextColor3 = Color3.new(1, 1, 1)
+    TabButton.Font = Enum.Font.GothamBold
+    TabButton.TextSize = 14
+    TabButton.Parent = self.Frame
+
+    TabButton.MouseButton1Click:Connect(function()
+        for _, t in ipairs(self.Tabs) do
+            t.Frame.Visible = false
+        end
+        TabFrame.Visible = true
+        self.ActiveTab = TabFrame
+    end)
 
     local Layout = Instance.new("UIListLayout", TabFrame)
     Layout.Padding = UDim.new(0, 5)
+    Layout.SortOrder = Enum.SortOrder.LayoutOrder
 
     local Section = {}
 
+    -- Section
     function Section:AddSection(title)
         local Label = Instance.new("TextLabel")
         Label.Size = UDim2.new(1, -10, 0, 20)
@@ -57,11 +82,12 @@ function Library:AddTab(name)
         Label.Parent = TabFrame
     end
 
+    -- Toggle
     function Section:AddToggle(title, default, callback)
         local Button = Instance.new("TextButton")
         Button.Size = UDim2.new(0, 200, 0, 25)
         Button.BackgroundColor3 = Color3.fromRGB(70, 130, 255)
-        Button.Text = "[ ] " .. title
+        Button.Text = (default and "[✔] " or "[ ] ") .. title
         Button.TextColor3 = Color3.new(1, 1, 1)
         Button.Font = Enum.Font.GothamBold
         Button.TextSize = 14
@@ -75,6 +101,7 @@ function Library:AddTab(name)
         end)
     end
 
+    -- Button
     function Section:AddButton(title, callback)
         local Btn = Instance.new("TextButton")
         Btn.Size = UDim2.new(0, 200, 0, 25)
@@ -90,11 +117,12 @@ function Library:AddTab(name)
         end)
     end
 
+    -- Slider
     function Section:AddSlider(title, min, max, default, callback)
-        local Frame = Instance.new("Frame")
-        Frame.Size = UDim2.new(0, 200, 0, 40)
-        Frame.BackgroundColor3 = Color3.fromRGB(50, 100, 200)
-        Frame.Parent = TabFrame
+        local FrameS = Instance.new("Frame")
+        FrameS.Size = UDim2.new(0, 200, 0, 40)
+        FrameS.BackgroundColor3 = Color3.fromRGB(50, 100, 200)
+        FrameS.Parent = TabFrame
 
         local Label = Instance.new("TextLabel")
         Label.Size = UDim2.new(1, 0, 0, 15)
@@ -103,7 +131,7 @@ function Library:AddTab(name)
         Label.Font = Enum.Font.GothamBold
         Label.TextSize = 14
         Label.BackgroundTransparency = 1
-        Label.Parent = Frame
+        Label.Parent = FrameS
 
         local Slider = Instance.new("TextButton")
         Slider.Size = UDim2.new(1, 0, 0, 20)
@@ -113,7 +141,7 @@ function Library:AddTab(name)
         Slider.TextColor3 = Color3.new(1, 1, 1)
         Slider.Font = Enum.Font.Gotham
         Slider.TextSize = 12
-        Slider.Parent = Frame
+        Slider.Parent = FrameS
 
         local value = default or min
         local UIS = game:GetService("UserInputService")
@@ -136,6 +164,7 @@ function Library:AddTab(name)
         end)
     end
 
+    -- Keybind
     function Section:AddKeybind(title, default, callback)
         local Btn = Instance.new("TextButton")
         Btn.Size = UDim2.new(0, 200, 0, 25)
@@ -156,9 +185,20 @@ function Library:AddTab(name)
         end)
     end
 
+    -- simpan tab
+    table.insert(self.Tabs, {Frame = TabFrame, Name = name})
+    table.insert(self.TabButtons, TabButton)
+
+    -- aktifkan tab pertama otomatis
+    if #self.Tabs == 1 then
+        TabFrame.Visible = true
+        self.ActiveTab = TabFrame
+    end
+
     return Section
 end
 
+-- Close GUI
 function Library:Close()
     self.Frame.Parent:Destroy()
 end
